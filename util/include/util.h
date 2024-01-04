@@ -8,6 +8,8 @@
 #include <stddef.h>
 #include <microkit.h>
 
+#include "printf.h"
+
 #define UART_REG(x) ((volatile uint32_t *)(UART_BASE + (x)))
 #define UART_BASE 0x5000000 //0x30890000 in hardware on imx8mm.
 #define STAT 0x98
@@ -23,6 +25,8 @@
 #define likely(x)   (!!(x))
 #define unlikely(x) (!!(x))
 #endif
+
+#define BIT(nr) (1UL << (nr))
 
 static void
 putC(uint8_t ch)
