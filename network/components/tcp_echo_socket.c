@@ -84,6 +84,7 @@ static err_t tcp_accept_callback(void *arg, struct tcp_pcb *pcb, err_t err) {
 
 int setup_tcp_socket(void)
 {
+    microkit_dbg_puts("TCP SERVER STARTED\n");
     tcp_socket = tcp_new_ip_type(IPADDR_TYPE_V4);
     if (tcp_socket == NULL) {
         microkit_dbg_puts("Failed to open a TCP socket");

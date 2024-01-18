@@ -527,7 +527,7 @@ void init(void)
         notify_rx = false;
         if (!have_signal) {
             microkit_notify_delayed(RX_CH);
-        } else if (signal != BASE_OUTPUT_NOTIFICATION_CAP + RX_CH) {
+        } else if (signal_cap != BASE_OUTPUT_NOTIFICATION_CAP + RX_CH) {
             microkit_notify(RX_CH);
         }
     }
@@ -536,7 +536,7 @@ void init(void)
         notify_tx = false;
         if (!have_signal) {
             microkit_notify_delayed(TX_CH);
-        } else if (signal != BASE_OUTPUT_NOTIFICATION_CAP + TX_CH) {
+        } else if (signal_cap != BASE_OUTPUT_NOTIFICATION_CAP + TX_CH) {
             microkit_notify(TX_CH);
         }
     }
@@ -572,7 +572,7 @@ void notified(microkit_channel ch)
         notify_rx = false;
         if (!have_signal) {
             microkit_notify_delayed(RX_CH);
-        } else if (signal != BASE_OUTPUT_NOTIFICATION_CAP + RX_CH) {
+        } else if (signal_cap != BASE_OUTPUT_NOTIFICATION_CAP + RX_CH) {
             microkit_notify(RX_CH);
         }
     }
@@ -582,7 +582,7 @@ void notified(microkit_channel ch)
         notify_tx = false;
         if (!have_signal) {
             microkit_notify_delayed(TX_CH);
-        } else if (signal != BASE_OUTPUT_NOTIFICATION_CAP + TX_CH) {
+        } else if (signal_cap != BASE_OUTPUT_NOTIFICATION_CAP + TX_CH) {
             microkit_notify(TX_CH);
         }
     }
