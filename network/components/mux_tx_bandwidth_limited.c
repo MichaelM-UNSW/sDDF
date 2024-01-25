@@ -30,7 +30,8 @@ uintptr_t uart_base;
 #define BUF_SIZE 2048
 #define DMA_SIZE 0x200000
 
-#define TIME_WINDOW 10000ULL // 10 milliseconds
+// #define TIME_WINDOW 10000ULL // 10 milliseconds
+#define TIME_WINDOW 0ULL
 
 #define GET_TIME 0
 #define SET_TIMEOUT 1

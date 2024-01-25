@@ -162,6 +162,7 @@ process_rx_complete(void)
 {
     uint32_t transmitted = 0;
     while (!ring_empty(rx_ring.used_ring)) {
+        print("ARP CLIENT HAS NON-EMPTY RING\n");
         int err;
         uintptr_t addr;
         unsigned int len;
@@ -175,9 +176,11 @@ process_rx_complete(void)
         struct eth_hdr *ethhdr = (struct eth_hdr *)addr;
         if (ethhdr->type == PP_HTONS(ETHTYPE_ARP)) {
             struct arp_packet *pkt = (struct arp_packet *)addr;
+            print("WE'VE GOT ETHARP!\n");
             // CHeck if it's a probe (we don't care about announcements)
             if (pkt->opcode == PP_HTONS(ARP_REQUEST)) {
-                // CHeck if it's for one of our clients.
+                print("WE'VE GOT NON-PROBE!\n");
+                // Check if it's for one of our clients.
                 client = match_arp_to_client(pkt->ipdst_addr);
                 if (client >= 0) {
                     // if so, send a response. 
@@ -192,6 +195,8 @@ process_rx_complete(void)
                     }
                 }
             }
+        } else {
+            print("Received MAC broadcast is NOT Arp\n");
         }
 
         err = enqueue_free(&rx_ring, addr, BUF_SIZE, cookie);
@@ -208,6 +213,7 @@ void
 notified(microkit_channel ch)
 {
     /* We have one job. */
+    print("ARP NOTIFIED\n");
     process_rx_complete();
 }
 
@@ -226,6 +232,7 @@ dump_mac(uint8_t *mac)
 seL4_MessageInfo_t
 protected(microkit_channel ch, microkit_msginfo msginfo)
 {
+    print("ARP PPCALLED\n");
     // get the client ID into our data structures.
     int client = ch - CLIENT_CH_START;
     if (client >= NUM_CLIENTS || client < 0) {

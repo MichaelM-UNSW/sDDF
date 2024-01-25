@@ -52,6 +52,7 @@
 #define TCP_RCV_SCALE 10
 #define PBUF_POOL_SIZE 1000
 #define MEMP_NUM_SYS_TIMEOUT 512
+// #define TCP_MSS 1000
 
 /* Set this to 0 for performance */
 #define LWIP_STATS 0
@@ -66,7 +67,7 @@
     (p)->next_chain = NULL;
 
 /* Debugging options */
-#define LWIP_DEBUG
+#define LWIP_DEBUG 0
 /* Change this to LWIP_DBG_LEVEL_ALL to see a trace 
 #define LWIP_DBG_MIN_LEVEL              LWIP_DBG_LEVEL_WARNING
 

@@ -56,7 +56,7 @@ void notified(microkit_channel ch)
     switch(ch) {
         case INIT:
             // init is complete so we can start counting.
-            count_idle();
+            //count_idle();
             break;
         default:
             microkit_dbg_puts("Idle thread notified on unexpected channel\n");

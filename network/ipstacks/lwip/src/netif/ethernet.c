@@ -271,6 +271,7 @@ ethernet_output(struct netif * netif, struct pbuf * p,
                 u16_t eth_type) {
   struct eth_hdr *ethhdr;
   u16_t eth_type_be = lwip_htons(eth_type);
+  print("I'm in ethernet output!\n");
 
 #if ETHARP_SUPPORT_VLAN && defined(LWIP_HOOK_VLAN_SET)
   s32_t vlan_prio_vid = LWIP_HOOK_VLAN_SET(netif, p, src, dst, eth_type);

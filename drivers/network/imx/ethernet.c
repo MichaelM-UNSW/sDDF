@@ -11,6 +11,7 @@
 #include "ethernet.h"
 #include "util.h"
 #include "fence.h"
+#include "printing_util.h"
 
 #define IRQ_CH 0
 #define TX_CH  1
@@ -95,6 +96,7 @@ static void update_ring_slot(
     uint16_t len,
     uint16_t stat)
 {
+    // microkit_dbg_puts("Inside update_ring slots\n");
     volatile struct descriptor *d = &(ring->descr[idx]);
     d->addr = phys;
     d->len = len;
@@ -131,6 +133,7 @@ alloc_rx_buf(size_t buf_size, void **cookie)
 static void
 fill_rx_bufs(void)
 {
+    // microkit_dbg_puts("Inside fill_rx_bufs\n");
     ring_ctx_t *ring = &rx;
     while (!hw_ring_full(ring)) {
         /* request a buffer */
@@ -163,6 +166,7 @@ fill_rx_bufs(void)
         enable_irqs(eth, NETIRQ_TXF | NETIRQ_EBERR);
         rx_ring.free_ring->notify_reader = true;
     }
+    // microkit_dbg_puts("End of fill_rx_bufs\n");
 }
 
 static void
@@ -179,6 +183,7 @@ handle_rx(volatile struct enet_regs *eth)
          * we can't process any packets because the queues are full
          * so disable Rx irqs.
          */
+        print("Rx ring full\n");
         enable_irqs(eth, NETIRQ_TXF | NETIRQ_EBERR);
         rx_ring.used_ring->notify_writer = true;
         return;
@@ -210,6 +215,9 @@ handle_rx(volatile struct enet_regs *eth)
 
         buff_desc_t *desc = (buff_desc_t *)cookie;
         int err = enqueue_used(&rx_ring, desc->encoded_addr, d->len, desc->cookie);
+        print("Enqueueing received packet received in Eth.c to Rx ring\n");
+        print("Queue size of rx.ring: ");
+        print_val(ring_size(rx_ring.used_ring), true);
         if (err) {
             print("ETH|ERROR: Failed to enqueue to RX used ring\n");
         }
@@ -225,12 +233,14 @@ handle_rx(volatile struct enet_regs *eth)
     if (num && rx_ring.used_ring->notify_reader) {
         microkit_notify(RX_CH);
     }
+    // microkit_dbg_puts("End of handle_rx\n");
 }
 
 static void
 raw_tx(volatile struct enet_regs *eth, uintptr_t phys,
                   unsigned int len, void *cookie)
 {
+    // microkit_dbg_puts("Inside raw_tx\n");
     ring_ctx_t *ring = &tx;
 
     unsigned int write = ring->write;
@@ -258,18 +268,21 @@ raw_tx(volatile struct enet_regs *eth, uintptr_t phys,
 static void
 handle_tx(volatile struct enet_regs *eth)
 {
+    // microkit_dbg_puts("Inside handle_tx\n");
     uintptr_t buffer = 0;
     unsigned int len = 0;
     void *cookie = NULL;
 
     while (!(hw_ring_full(&tx)) && !driver_dequeue(tx_ring.used_ring, &buffer, &len, &cookie)) {
         raw_tx(eth, buffer, len, cookie);
+        print("Calling raw_tx from eth.c\n");
     }
 }
 
 static void
 complete_tx(volatile struct enet_regs *eth)
 {
+    // microkit_dbg_puts("Inside complete_tx\n");
     void *cookie;
     ring_ctx_t *ring = &tx;
     unsigned int read = ring->read;
@@ -305,6 +318,7 @@ complete_tx(volatile struct enet_regs *eth)
 static void
 handle_eth(volatile struct enet_regs *eth)
 {
+    // microkit_dbg_puts("Inside handle_eth\n");
     uint32_t e = eth->eir & irq_mask;
     /* write to clear events */
     eth->eir = e;
@@ -324,6 +338,7 @@ handle_eth(volatile struct enet_regs *eth)
         e = eth->eir & irq_mask;
         eth->eir = e;
     }
+    // microkit_dbg_puts("End of handle_eth\n");
 }
 
 static void

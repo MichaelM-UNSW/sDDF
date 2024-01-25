@@ -7,6 +7,7 @@
 #include "util.h"
 #include "lwip/ip_addr.h"
 #include "netif/etharp.h"
+#include "printing_util.h"
 
 uintptr_t rx_free_drv;
 uintptr_t rx_used_drv;
@@ -114,6 +115,7 @@ int get_client(uintptr_t dma_vaddr) {
  */
 void process_rx_complete(void)
 {
+    // microkit_dbg_puts("Inside process rx_complete\n");
     bool notify_clients[NUM_CLIENTS] = {false};
     /* To avoid notifying the driver twice, used this global variable to 
         determine whether we need to notify the driver in 
@@ -149,10 +151,15 @@ void process_rx_complete(void)
         if (client >= 0 && !ring_full(state.rx_ring_clients[client].used_ring)) {
             /* enqueue it. */
             int err = enqueue_used(&state.rx_ring_clients[client], vaddr, len, cookie);
+            print("Just enqueued for client: ");
+            print_val(client, false);
+            print(" with queue length currently ");
+            print_val(ring_size(state.rx_ring_clients[client].used_ring), true);
             if (err) {
                 print("MUX RX|ERROR: failed to enqueue onto used ring\n");
             }
 
+            state.rx_ring_clients[client].used_ring->notify_reader = true;
             if (state.rx_ring_clients[client].used_ring->notify_reader) {
                 notify_clients[client] = true;
             }
@@ -160,6 +167,10 @@ void process_rx_complete(void)
             // either the packet is not for us, or the client queue is full.
             // return the buffer to the driver.
             err = enqueue_free(&state.rx_ring_drv, addr, len, cookie);
+            print("Client for addr "); 
+            dump_mac(((struct eth_hdr *)vaddr)->dest.addr);
+            print(" was not found. dropping packet\n");
+            
             if (err) {
                 print("MUX RX|ERROR: Failed to enqueue free to driver RX ring\n");
             }
@@ -170,6 +181,22 @@ void process_rx_complete(void)
     /* Loop over bitmap and see who we need to notify. */
     for (int client = 0; client < NUM_CLIENTS; client++) {
         if (notify_clients[client]) {
+            print("Notifying client ");
+            switch (client) {
+                case 0:
+                    putC('0');
+                    break;
+                case 1:
+                    putC('1');
+                    break;
+                case 2:
+                    putC('2');
+                    break;
+                default:
+                    print("THIS SHOULDN'T BE HAPPENING\n");
+            }
+
+            putC('\n');
             microkit_notify(client);
         }
 
@@ -180,6 +207,7 @@ void process_rx_complete(void)
             state.rx_ring_clients[client].free_ring->notify_reader = false;
         }
     }
+    // microkit_dbg_puts("End of process rx complete\n");
 }
 
 // Loop over all client rings and return unused rx buffers to the driver
@@ -189,6 +217,7 @@ bool process_rx_free(void)
      * ring was empty, we want to notify the driver. We also only want to
      * notify it only once.
      */
+    // microkit_dbg_puts("Inside process_rx_free\n");
     bool enqueued = false;
     for (int i = 0; i < NUM_CLIENTS; i++) {
         while (!ring_empty(state.rx_ring_clients[i].free_ring)) { // && !ring_full(state.rx_ring_drv.free_ring)
@@ -232,6 +261,7 @@ bool process_rx_free(void)
         }
     }
 
+    // microkit_dbg_puts("end of process_rx free\n");
     return enqueued;
 }
 

@@ -268,8 +268,12 @@ void notified(microkit_channel ch)
 
 void init(void)
 {
+    microkit_dbg_puts("HI 1\n");
     sel4bench_init();
+    microkit_dbg_puts("HI 2\n");
     seL4_Word n_counters = sel4bench_get_num_counters();
+
+    microkit_dbg_puts("HI 3\n");
 
     counter_bitfield_t mask = 0;
 

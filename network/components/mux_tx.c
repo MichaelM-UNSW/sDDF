@@ -98,6 +98,7 @@ get_client(uintptr_t addr)
  */
 void process_tx_ready(void)
 {
+    // microkit_dbg_puts("Inside process_tx_ready\n");
     uint64_t original_size = ring_size(state.tx_ring_drv.used_ring);
     uint64_t enqueued = 0;
     uint64_t old_enqueued = enqueued;
@@ -122,6 +123,7 @@ void process_tx_ready(void)
     }
 
     if (state.tx_ring_drv.used_ring->notify_reader) {
+        print("Notifying network driver from mux_tx.c: process_tx_ready\n");
         microkit_notify_delayed(DRIVER);
     }
 }
@@ -133,6 +135,7 @@ void process_tx_ready(void)
  */
 void process_tx_complete(void)
 {
+    // microkit_dbg_puts("Inside process_tx_compelte\n");
     // bitmap stores whether which clients need notifying.
     bool notify_clients[NUM_CLIENTS] = {false};
 

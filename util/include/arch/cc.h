@@ -63,6 +63,7 @@ typedef uintptr_t mem_ptr_t;
 #define LWIP_PLATFORM_DIAG(x)           \
         do {                            \
             print("lwIP error\n");      \
+            print(x);                   \
         } while(0)
 
 #define LWIP_PLATFORM_ASSERT(x) \

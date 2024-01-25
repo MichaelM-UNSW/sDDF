@@ -22,6 +22,8 @@
 #include "timer.h"
 #include "cache.h"
 
+#include "printing_util.h"
+
 #define TIMER  1
 #define RX_CH  2
 #define TX_CH  3
@@ -121,6 +123,7 @@ cancel_free_ntfn(ring_handle_t *ring)
 
 static inline void return_buffer(uintptr_t addr)
 {
+    // microkit_dbg_puts("Inside return_buffer\n");
     /* As the rx_free ring is the size of the number of buffers we have,
     the ring should never be full. 
     FIXME: This full condition could change... */
@@ -208,6 +211,7 @@ alloc_tx_buffer(size_t length)
 void
 enqueue_pbufs(struct pbuf *buff)
 {
+    // microkit_dbg_puts("Inside enqueue_pbufs\n");
     request_free_ntfn(&state.tx_ring);
     if (state.head == NULL) {
         state.head = buff;
@@ -231,6 +235,7 @@ enqueue_pbufs(struct pbuf *buff)
 static err_t
 lwip_eth_send(struct netif *netif, struct pbuf *p)
 {
+    // microkit_dbg_puts("Inside lwip_eth_send\n");
     /* Grab an free TX buffer, copy pbuf data over,
     add to used tx ring, notify server */
     err_t ret = ERR_OK;
@@ -270,6 +275,11 @@ lwip_eth_send(struct netif *netif, struct pbuf *p)
 
     /* insert into the used tx queue */
     err = enqueue_used(&(state.tx_ring), (uintptr_t)frame, copied, NULL);
+    print("I've just enqueued to the tx queue\n");
+    print("Queue length: ");
+    print_val(ring_size(state.rx_ring.used_ring), true);
+
+
     if (err) {
         assert(!err);
         return ERR_MEM;
@@ -277,6 +287,7 @@ lwip_eth_send(struct netif *netif, struct pbuf *p)
 
     /* Notify the server for next time we recv() */
     notify_tx = true;
+    print("notify_tx has been set from lwip_eth_send, sending soon\n");
 
     return ret;
 }
@@ -284,6 +295,7 @@ lwip_eth_send(struct netif *netif, struct pbuf *p)
 void
 process_tx_queue(void)
 {
+    // microkit_dbg_puts("Inside process_tx_queue\n");
     int err;
     struct pbuf *current = state.head;
     struct pbuf *temp;
@@ -324,6 +336,7 @@ process_tx_queue(void)
 
         /* Notify the server for next time we recv() */
         notify_tx = true;
+        print("Notify has been set to true from, sending next time?\n");
 
         /* free the pbufs. */
         temp = current;
@@ -345,6 +358,7 @@ process_tx_queue(void)
 void
 process_rx_queue(void)
 {
+    // microkit_dbg_puts("Inside process_rx_queue\n");
     cancel_used_ntfn(&state.rx_ring);
     while (!ring_empty(state.rx_ring.used_ring)) {
         uintptr_t addr;
@@ -360,6 +374,7 @@ process_rx_queue(void)
             print("LWIP|ERROR: netif.input() != ERR_OK");
             pbuf_free(p);
         }
+        print("Packet was passed up to network layer\n");
     }
     request_used_ntfn(&state.rx_ring);
 }
@@ -395,6 +410,7 @@ static err_t ethernet_init(struct netif *netif)
 
 static void netif_status_callback(struct netif *netif)
 {
+    // microkit_dbg_puts("Inside netif_status_callback\n");
     if (dhcp_supplied_address(netif)) {
         /* Tell the ARP component so we it can respond to ARP requests. */
         microkit_mr_set(0, ip4_addr_get_u32(netif_ip4_addr(netif)));
@@ -436,6 +452,7 @@ static void get_mac(void)
 
 void dump_log(void)
 {
+    // microkit_dbg_puts("Inside dump_log\n");
     for (int i = 0; i < NUM_BUFFERS * 2; i++) {
         print(logbuffer[i].action);
         print(",");
@@ -495,6 +512,7 @@ void init(void)
 
     setup_udp_socket();
     setup_utilization_socket();
+    setup_tcp_socket();
 
     request_used_ntfn(&state.rx_ring);
     request_used_ntfn(&state.tx_ring);
@@ -506,9 +524,10 @@ void init(void)
 
     if (notify_tx && state.tx_ring.used_ring->notify_reader) {
         notify_tx = false;
+        print("I'm about to notify tx_CH from init\n");
         if (!have_signal) {
             microkit_notify_delayed(TX_CH);
-        } else if (signal_cap != BASE_OUTPUT_NOTIFICATION_CAP + TX_CH) {
+        } else if (signal != BASE_OUTPUT_NOTIFICATION_CAP + TX_CH) {
             microkit_notify(TX_CH);
         }
     }
@@ -543,16 +562,17 @@ void notified(microkit_channel ch)
         notify_rx = false;
         if (!have_signal) {
             microkit_notify_delayed(RX_CH);
-        } else if (signal_cap != BASE_OUTPUT_NOTIFICATION_CAP + RX_CH) {
+        } else if (signal != BASE_OUTPUT_NOTIFICATION_CAP + RX_CH) {
             microkit_notify(RX_CH);
         }
     }
 
     if (notify_tx && state.tx_ring.used_ring->notify_reader) {
         notify_tx = false;
+        print("I'm about to notify tx_CH from notify\n");
         if (!have_signal) {
             microkit_notify_delayed(TX_CH);
-        } else if (signal_cap != BASE_OUTPUT_NOTIFICATION_CAP + TX_CH) {
+        } else if (signal != BASE_OUTPUT_NOTIFICATION_CAP + TX_CH) {
             microkit_notify(TX_CH);
         }
     }
